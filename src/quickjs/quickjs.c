@@ -22,6 +22,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#if defined(STRICT_R_HEADERS) && defined(_WIN32)
+#define __USE_MINGW_ANSI_STDIO 1
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -46,6 +49,12 @@
 #include "libregexp.h"
 #ifdef CONFIG_BIGNUM
 #include "libbf.h"
+#endif
+
+// Need alternative assert() function to avoid unused variable warnings
+// https://stackoverflow.com/a/985807
+#ifdef STRICT_R_HEADERS
+#define ASSERT(x) do { (void)sizeof(x);} while (0)
 #endif
 
 #define OPTIMIZE         1
@@ -216,7 +225,32 @@ typedef enum {
     JS_GC_PHASE_REMOVE_CYCLES,
 } JSGCPhaseEnum;
 
-#ifndef STRICT_R_HEADERS
+// Forward-declarations of enums gives -Wpedantic warning, so
+// include full declaration early
+#ifdef STRICT_R_HEADERS
+enum OPCodeEnum {
+#define FMT(f)
+#define DEF(id, size, n_pop, n_push, f) OP_ ## id,
+#define def(id, size, n_pop, n_push, f)
+#include "quickjs-opcode.h"
+#undef def
+#undef DEF
+#undef FMT
+    OP_COUNT, /* excluding temporary opcodes */
+    /* temporary opcodes : overlap with the short opcodes */
+    OP_TEMP_START = OP_nop + 1,
+    OP___dummy = OP_TEMP_START - 1,
+#define FMT(f)
+#define DEF(id, size, n_pop, n_push, f)
+#define def(id, size, n_pop, n_push, f) OP_ ## id,
+#include "quickjs-opcode.h"
+#undef def
+#undef DEF
+#undef FMT
+    OP_TEMP_END,
+};
+#endif
+
 typedef enum OPCodeEnum OPCodeEnum;
 
 #ifdef CONFIG_BIGNUM
@@ -237,7 +271,6 @@ typedef struct {
                                     int64_t exponent);
     int (*mul_pow10)(JSContext *ctx, JSValue *sp);
 } JSNumericOperations;
-#endif
 #endif
 
 struct JSRuntime {
@@ -992,6 +1025,7 @@ typedef enum OPCodeFormat {
 #undef FMT
 } OPCodeFormat;
 
+#ifndef STRICT_R_HEADERS
 enum OPCodeEnum {
 #define FMT(f)
 #define DEF(id, size, n_pop, n_push, f) OP_ ## id,
@@ -1013,6 +1047,7 @@ enum OPCodeEnum {
 #undef FMT
     OP_TEMP_END,
 };
+#endif
 
 static int JS_InitAtoms(JSRuntime *rt);
 static JSAtom __JS_NewAtomInit(JSRuntime *rt, const char *str, int len,
@@ -2213,14 +2248,22 @@ static inline void set_value(JSContext *ctx, JSValue *pval, JSValue new_val)
 void JS_SetClassProto(JSContext *ctx, JSClassID class_id, JSValue obj)
 {
     JSRuntime *rt = ctx->rt;
+#ifndef STRICT_R_HEADERS
     assert(class_id < rt->class_count);
+#else
+    ASSERT(class_id < rt->class_count);
+#endif
     set_value(ctx, &ctx->class_proto[class_id], obj);
 }
 
 JSValue JS_GetClassProto(JSContext *ctx, JSClassID class_id)
 {
     JSRuntime *rt = ctx->rt;
+#ifndef STRICT_R_HEADERS
     assert(class_id < rt->class_count);
+#else
+    ASSERT(class_id < rt->class_count);
+#endif
     return JS_DupValue(ctx, ctx->class_proto[class_id]);
 }
 
@@ -7463,7 +7506,11 @@ static int num_keys_cmp(const void *p1, const void *p2, void *opaque)
 
     atom1_is_integer = JS_AtomIsArrayIndex(ctx, &v1, atom1);
     atom2_is_integer = JS_AtomIsArrayIndex(ctx, &v2, atom2);
+#ifndef STRICT_R_HEADERS
     assert(atom1_is_integer && atom2_is_integer);
+#else
+    ASSERT(atom1_is_integer && atom2_is_integer);
+#endif
     if (v1 < v2)
         return -1;
     else if (v1 == v2)
@@ -12377,7 +12424,11 @@ static JSValue JS_CompactBigInt1(JSContext *ctx, JSValue val,
         return JS_NewInt64(ctx, v);
     } else if (a->expn == BF_EXP_ZERO && a->sign) {
         JSBigFloat *p = JS_VALUE_GET_PTR(val);
+#ifndef STRICT_R_HEADERS
         assert(p->header.ref_count == 1);
+#else
+        ASSERT(p->header.ref_count == 1);
+#endif
         a->sign = 0;
     }
     return val;
@@ -33798,9 +33849,13 @@ JSValue JS_EvalThis(JSContext *ctx, JSValueConst this_obj,
 {
     int eval_type = eval_flags & JS_EVAL_TYPE_MASK;
     JSValue ret;
-
+#ifndef STRICT_R_HEADERS
     assert(eval_type == JS_EVAL_TYPE_GLOBAL ||
            eval_type == JS_EVAL_TYPE_MODULE);
+#else
+    ASSERT(eval_type == JS_EVAL_TYPE_GLOBAL ||
+           eval_type == JS_EVAL_TYPE_MODULE);
+#endif
     ret = JS_EvalInternal(ctx, this_obj, input, input_len, filename,
                           eval_flags, -1);
     return ret;
@@ -45870,7 +45925,11 @@ static void reset_weak_ref(JSRuntime *rt, JSObject *p)
        lists */
     for(mr = p->first_weak_ref; mr != NULL; mr = mr->next_weak_ref) {
         s = mr->map;
+#ifndef STRICT_R_HEADERS
         assert(s->is_weak);
+#else
+        ASSERT(s->is_weak);
+#endif
         assert(!mr->empty); /* no iterator on WeakMap/WeakSet */
         list_del(&mr->hash_link);
         list_del(&mr->link);

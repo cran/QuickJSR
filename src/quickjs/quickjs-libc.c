@@ -22,6 +22,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#if defined(STRICT_R_HEADERS) && defined(_WIN32)
+#define __USE_MINGW_ANSI_STDIO 1
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -160,8 +163,11 @@ static JSValue js_printf_internal(JSContext *ctx,
     double double_arg;
     const char *string_arg;
     /* Use indirect call to dbuf_printf to prevent gcc warning */
+#ifndef STRICT_R_HEADERS
     int (*dbuf_printf_fun)(DynBuf *s, const char *fmt, ...) = (void*)dbuf_printf;
-
+#else
+    int (*dbuf_printf_fun)(DynBuf *s, const char *fmt, ...) = &dbuf_printf;
+#endif
     js_std_dbuf_init(ctx, &dbuf);
 
     if (argc > 0) {
@@ -491,7 +497,11 @@ static JSModuleDef *js_module_loader_so(JSContext *ctx,
         goto fail;
     }
 
+#ifndef STRICT_R_HEADERS
     init = dlsym(hd, "js_init_module");
+#else
+    *(void **)(&init) = dlsym(hd, "js_init_module");
+#endif
     if (!init) {
         JS_ThrowReferenceError(ctx, "could not load module filename '%s': js_init_module not found",
                                module_name);
