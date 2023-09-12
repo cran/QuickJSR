@@ -1,12 +1,12 @@
-9af221c81c019cb4f4bcb4e5c07afa03 *DESCRIPTION
+4b77dec0ec6762632952f3ce164e080b *DESCRIPTION
 f29ab4c037b9b5744c35044282f622ba *LICENSE
 3b85e49787d5597b060d6709653be35a *NAMESPACE
-52a0b1fadfd805f8d412cb9754df58f7 *R/JSContext.R
+b334bb8a88d804be857febc54672a816 *R/JSContext.R
 fa8b5e1b5b171825e18df81b276da834 *R/flags.R
 23e3d0f35d388c039f8bd08be396eaf6 *R/plugin.R
 abbf26d371aa79af1822448bb90122f2 *R/qjs.R
 c798c495636692cfd34cf0bf381b6911 *R/quickjsr-package.R
-7e6c8c12d420bc5950d555542bffd22d *R/utils.R
+3c12f3c92515c8a3278b7c4b961e9c53 *R/utils.R
 45d369987be0f222d8e6bb77d55e2dae *R/zzz.R
 2db2d776dc9c7293f1252b863158b463 *README.md
 994b92f700ebbe33dd84b3c8f10ccaf4 *inst/include/cutils.h
@@ -29,7 +29,7 @@ b0d26bf20e4f40366d89200d36992c2d *inst/include/quickjs-atom.h
 2f10199f133b164122b21542e4c3ba94 *src/Makevars
 25d313aec66e884cc0d04b2f3d45533b *src/init.cpp
 a2a9e400d9c7523101b8cde1d176b6d0 *src/qjs.cpp
-9a53cd2a6f3a04d188e6e927fcff8fe1 *src/qjs_impl.c
+2062914ba2e80df376cd9ba06ea797a8 *src/qjs_impl.c
 9513f98dd9d850b08441dc90328aa8d8 *src/quickjs/cutils.c
 55a78ff7e807741ad28583a3968540bb *src/quickjs/libbf.c
 6fb93a245591bd4f9057bed3db88a71c *src/quickjs/libregexp.c
