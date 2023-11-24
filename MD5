@@ -1,4 +1,4 @@
-8ac9c34097358c27738bf547bda827ac *DESCRIPTION
+a3fa7a944687f7b79932fbe4f6ea37b2 *DESCRIPTION
 f29ab4c037b9b5744c35044282f622ba *LICENSE
 3b85e49787d5597b060d6709653be35a *NAMESPACE
 6370d388f14583796412786013e5af9a *R/JSContext.R
@@ -27,7 +27,7 @@ b0d26bf20e4f40366d89200d36992c2d *inst/include/quickjs-atom.h
 150372cf6b51a31d3ffe8484b5e54a9a *man/cxxflags.Rd
 3b888ea368d0b11fd4f4c82f78edd549 *man/ldflags.Rd
 6543bb7cb53af61a54c791cfca074ac8 *man/qjs_eval.Rd
-b99dc03aab443d408b261a07af70d067 *src/Makevars
+e693b626f29a90e675b6fb8eed7e7a8b *src/Makevars
 25d313aec66e884cc0d04b2f3d45533b *src/init.cpp
 3944e763599cf39f2c837752b27d4e68 *src/qjs.cpp
 57963f2edeab06c7a961544f9b977037 *src/qjs_impl.c
