@@ -67,7 +67,7 @@
 
 /* define to include Atomics.* operations which depend on the OS
    threads */
-#if !defined(EMSCRIPTEN)
+#if !defined(EMSCRIPTEN) && !defined(DISABLE_ATOMICS)
 #define CONFIG_ATOMICS
 #endif
 
@@ -33345,7 +33345,13 @@ static JSValue js_create_function(JSContext *ctx, JSFunctionDef *fd)
             }
         } else {
             b->vardefs = (void *)((uint8_t*)b + vardefs_offset);
+#ifdef STRICT_R_HEADERS
+            if (fd->args)
+#endif
             memcpy(b->vardefs, fd->args, fd->arg_count * sizeof(fd->args[0]));
+#ifdef STRICT_R_HEADERS
+            if (fd->vars)
+#endif
             memcpy(b->vardefs + fd->arg_count, fd->vars, fd->var_count * sizeof(fd->vars[0]));
         }
         b->var_count = fd->var_count;

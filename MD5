@@ -1,7 +1,7 @@
-63705d3374a7df03842d46cde402ba89 *DESCRIPTION
+43901427940bba4ebfa412829d30966d *DESCRIPTION
 f29ab4c037b9b5744c35044282f622ba *LICENSE
 61956db567571fe088fc892f44e4313e *NAMESPACE
-686a01cdc546d5e8a5244a4809d8e99d *NEWS.md
+5b0bf13fd68de0fabe2f942db518cc7a *NEWS.md
 6370d388f14583796412786013e5af9a *R/JSContext.R
 90389f5b6ac03f93ad4d50b7c4eafd6c *R/flags.R
 23e3d0f35d388c039f8bd08be396eaf6 *R/plugin.R
@@ -16,7 +16,7 @@ f07b9495e64e50da548d3d427f72599d *man/QuickJSR-package.Rd
 3b888ea368d0b11fd4f4c82f78edd549 *man/ldflags.Rd
 6543bb7cb53af61a54c791cfca074ac8 *man/qjs_eval.Rd
 0c49d2eedbb5424493c46f4b3b2bcfd0 *man/quickjs_version.Rd
-5e7a334da00905d21252975c1dbd2cfe *src/Makevars
+6d3a56f6c262303b8a0c279324612fa8 *src/Makevars
 25d313aec66e884cc0d04b2f3d45533b *src/init.cpp
 77f851e1838c9fefaa6780ee16facbce *src/quickjs/Changelog
 7e339b862c8367eccbac48ac0a5bb2c3 *src/quickjs/LICENSE
@@ -50,10 +50,10 @@ fdb01bfdd21c34cc9378b41f006cbf82 *src/quickjs/list.h
 568b2143ab4cd6cfb4873051c55ab59e *src/quickjs/qjsc.c
 fae27ddb038346d2d3417f309a6afbd2 *src/quickjs/qjscalc.js
 78c844a6ed41d80bfe74d3f00a9184b6 *src/quickjs/quickjs-atom.h
-675b1d421eb590fa30e4dddc3bb73dfc *src/quickjs/quickjs-libc.c
+f170e2cf8c91613d90346b46af30e611 *src/quickjs/quickjs-libc.c
 98a7616270b807129bd1deaff426aab1 *src/quickjs/quickjs-libc.h
 6a85c829e93533399c8f380fb09687de *src/quickjs/quickjs-opcode.h
-57573c187c9f24013a4c00d6d374154b *src/quickjs/quickjs.c
+9269e1a02606ab457f1793ee6e25046a *src/quickjs/quickjs.c
 bf75ef81eabb44edc2790e67ba0fc9ab *src/quickjs/quickjs.h
 50f265df3400d5b1dc79da8f5ee58503 *src/quickjs/readme.txt
 5859c9017a71987da50989e0a1e4ab06 *src/quickjs/release.sh
