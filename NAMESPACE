@@ -2,11 +2,9 @@
 
 export(JSContext)
 export(cxxflags)
+export(from_json)
 export(ldflags)
 export(qjs_eval)
 export(quickjs_version)
-importFrom(R6,R6Class)
-importFrom(Rcpp,Rcpp.plugin.maker)
-importFrom(Rcpp,sourceCpp)
-importFrom(jsonlite,fromJSON)
+export(to_json)
 useDynLib(QuickJSR, .registration = TRUE)
