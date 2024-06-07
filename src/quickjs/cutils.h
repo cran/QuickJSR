@@ -28,6 +28,12 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
+#ifdef STRICT_R_HEADERS
+#ifdef __cplusplus
+extern "C" {
+#endif
+#endif
+
 /* set if CPU is big endian */
 #undef WORDS_BIGENDIAN
 
@@ -54,11 +60,14 @@
 
 typedef int BOOL;
 
+// Conflicts with Rboolean declaration
+#ifndef STRICT_R_HEADERS
 #ifndef FALSE
 enum {
     FALSE = 0,
     TRUE = 1,
 };
+#endif
 #endif
 
 void pstrcpy(char *buf, int buf_size, const char *str);
@@ -210,6 +219,9 @@ static inline void put_u8(uint8_t *tab, uint8_t val)
     *tab = val;
 }
 
+// FreeBSD has builtins for these, causing compile errors
+#ifdef STRICT_R_HEADERS
+#ifndef __FreeBSD__
 static inline uint16_t bswap16(uint16_t x)
 {
     return (x >> 8) | (x << 8);
@@ -232,7 +244,8 @@ static inline uint64_t bswap64(uint64_t v)
         ((v & ((uint64_t)0xff << (1 * 8))) << (5 * 8)) | 
         ((v & ((uint64_t)0xff << (0 * 8))) << (7 * 8));
 }
-
+#endif
+#endif
 /* XXX: should take an extra argument to pass slack information to the caller */
 typedef void *DynBufReallocFunc(void *opaque, void *ptr, size_t size);
 
@@ -296,5 +309,9 @@ static inline int from_hex(int c)
 void rqsort(void *base, size_t nmemb, size_t size,
             int (*cmp)(const void *, const void *, void *),
             void *arg);
+
+#ifdef __cplusplus
+} /* extern "C" { */
+#endif
 
 #endif  /* CUTILS_H */

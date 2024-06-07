@@ -5374,6 +5374,8 @@ int bf_acos(bf_t *r, const bf_t *a, limb_t prec, bf_flags_t flags)
     } while (0)
 
 #if LIMB_BITS == 64
+
+// unsigned __int128 is an extension, use the proper type to avoid warnings
 #ifdef STRICT_R_HEADERS
 /* Note: we assume __int128 is available */
 #define muldq(r1, r0, a, b)                     \

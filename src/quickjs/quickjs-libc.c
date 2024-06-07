@@ -47,6 +47,14 @@
 #include <sys/ioctl.h>
 #include <sys/wait.h>
 
+// Backport FreeBSD patch from upstream
+#ifdef STRICT_R_HEADERS
+#if defined(__FreeBSD__)
+extern char **environ;
+typedef sig_t sighandler_t;
+#endif
+#endif
+
 #if defined(__APPLE__)
 typedef sig_t sighandler_t;
 #if !defined(environ)
@@ -57,9 +65,17 @@ typedef sig_t sighandler_t;
 
 #endif
 
+// Disable additional defines if ATOMICS not used
+#ifdef STRICT_R_HEADERS
 #if !defined(_WIN32) && !defined(DISABLE_ATOMICS)
 /* enable the os.Worker API. IT relies on POSIX threads */
 #define USE_WORKER
+#endif
+#else
+#if !defined(_WIN32)
+/* enable the os.Worker API. IT relies on POSIX threads */
+#define USE_WORKER
+#endif
 #endif
 
 #ifdef USE_WORKER
@@ -159,13 +175,13 @@ static JSValue js_printf_internal(JSContext *ctx,
     int64_t int64_arg;
     double double_arg;
     const char *string_arg;
+// Indirect call assigns void pointer to function pointer, gives Wpedantic warning
 #ifdef STRICT_R_HEADERS
     int (*dbuf_printf_fun)(DynBuf *s, const char *fmt, ...) = dbuf_printf;
 #else
     /* Use indirect call to dbuf_printf to prevent gcc warning */
     int (*dbuf_printf_fun)(DynBuf *s, const char *fmt, ...) = (void*)dbuf_printf;
 #endif
-
     js_std_dbuf_init(ctx, &dbuf);
 
     if (argc > 0) {
@@ -494,7 +510,8 @@ static JSModuleDef *js_module_loader_so(JSContext *ctx,
                                module_name);
         goto fail;
     }
-
+// Assigning void* to JSInitModuleFunc* converts void to function pointer,
+// gives Wpedantic warning
 #ifdef STRICT_R_HEADERS
     *(void **)(&init) = dlsym(hd, "js_init_module");
 #else
@@ -3211,8 +3228,9 @@ typedef struct {
 
 typedef struct {
     int ref_count;
+// Size-zero arrays give Wpedantic warning, mark as extension to avoid
 #ifdef STRICT_R_HEADERS
-    uint64_t buf[];
+    __extension__ uint64_t buf[0];
 #else
     uint64_t buf[0];
 #endif

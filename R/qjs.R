@@ -24,8 +24,8 @@ qjs_context <- function(stack_size) {
   .Call(`qjs_context_`, stack_size)
 }
 
-qjs_source <- function(ctx_ptr, code_string) {
-  .Call(`qjs_source_`, ctx_ptr, code_string)
+qjs_source <- function(ctx_ptr, input, is_file) {
+  .Call(`qjs_source_`, ctx_ptr, input, is_file)
 }
 
 qjs_call <- function(ctx_ptr, function_name, ...) {
@@ -34,6 +34,15 @@ qjs_call <- function(ctx_ptr, function_name, ...) {
 
 qjs_validate <- function(ctx_ptr, function_name) {
   .Call(`qjs_validate_`, ctx_ptr, function_name)
+}
+
+qjs_get <- function(ctx_ptr, var_name) {
+  .Call(`qjs_get_`, ctx_ptr, var_name)
+}
+
+qjs_assign <- function(ctx_ptr, var_name, value) {
+  res <- .Call(`qjs_assign_`, ctx_ptr, var_name, value)
+  invisible(NULL)
 }
 
 #' to_json

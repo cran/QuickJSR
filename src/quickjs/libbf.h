@@ -36,6 +36,7 @@
 #define LIMB_BITS (1 << LIMB_LOG2_BITS)
 
 #if LIMB_BITS == 64
+// int128 needs to be marked as an extension to avoid Wpedantic warnings
 #ifdef STRICT_R_HEADERS
 __extension__ typedef __int128 int128_t;
 __extension__ typedef unsigned __int128 uint128_t;
