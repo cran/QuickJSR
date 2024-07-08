@@ -1,6 +1,6 @@
 /*
  * QuickJS: binary JSON module (test only)
- * 
+ *
  * Copyright (c) 2017-2019 Fabrice Bellard
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -24,15 +24,15 @@
 #include "../quickjs-libc.h"
 #include "../cutils.h"
 
-static JSValue js_bjson_read(JSContext *ctx, JSValueConst this_val,
-                             int argc, JSValueConst *argv)
+static JSValue js_bjson_read(JSContext *ctx, JSValue this_val,
+                             int argc, JSValue *argv)
 {
     uint8_t *buf;
     uint64_t pos, len;
     JSValue obj;
     size_t size;
     int flags;
-    
+
     if (JS_ToIndex(ctx, &pos, argv[1]))
         return JS_EXCEPTION;
     if (JS_ToIndex(ctx, &len, argv[2]))
@@ -49,14 +49,14 @@ static JSValue js_bjson_read(JSContext *ctx, JSValueConst this_val,
     return obj;
 }
 
-static JSValue js_bjson_write(JSContext *ctx, JSValueConst this_val,
-                              int argc, JSValueConst *argv)
+static JSValue js_bjson_write(JSContext *ctx, JSValue this_val,
+                              int argc, JSValue *argv)
 {
     size_t len;
     uint8_t *buf;
     JSValue array;
     int flags;
-    
+
     flags = 0;
     if (JS_ToBool(ctx, argv[1]))
         flags |= JS_WRITE_OBJ_REFERENCE;

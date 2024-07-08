@@ -19,14 +19,10 @@
 
 @chapter Introduction
 
-QuickJS is a small and embeddable Javascript engine. It supports most of the
-ES2023 specification
-@footnote{@url{https://tc39.es/ecma262/2023 }}
+QuickJS is a small and embeddable Javascript engine. It supports the
+ES2020 specification
+@footnote{@url{https://tc39.es/ecma262/}}
 including modules, asynchronous generators, proxies and BigInt.
-
-It supports mathematical extensions such as big decimal float float
-numbers (BigDecimal), big binary floating point numbers (BigFloat),
-and operator overloading.
 
 @section Main Features
 
@@ -34,20 +30,18 @@ and operator overloading.
 
 @item Small and easily embeddable: just a few C files, no external dependency, 210 KiB of x86 code for a simple ``hello world'' program.
 
-@item Fast interpreter with very low startup time: runs the 77000 tests of the ECMAScript Test Suite@footnote{@url{https://github.com/tc39/test262}} in less than 2 minutes on a single core of a desktop PC. The complete life cycle of a runtime instance completes in less than 300 microseconds.
+@item Fast interpreter with very low startup time: runs the 69000 tests of the ECMAScript Test Suite@footnote{@url{https://github.com/tc39/test262}} in about 95 seconds on a single core of a desktop PC. The complete life cycle of a runtime instance completes in less than 300 microseconds.
 
-@item Almost complete ES2023 support including modules, asynchronous
-generators and full Annex B support (legacy web compatibility). Some
-features from the upcoming ES2024 specification
-@footnote{@url{https://tc39.es/ecma262/}} are also supported.
+@item Almost complete ES2020 support including modules, asynchronous
+generators and full Annex B support (legacy web compatibility). Many
+features from the upcoming ES2021 specification
+@footnote{@url{https://tc39.github.io/ecma262/}} are also supported.
 
-@item Passes nearly 100% of the ECMAScript Test Suite tests when selecting the ES2023 features.
+@item Passes nearly 100% of the ECMAScript Test Suite tests when selecting the ES2020 features.
 
 @item Compile Javascript sources to executables with no external dependency.
 
 @item Garbage collection using reference counting (to reduce memory usage and have deterministic behavior) with cycle removal.
-
-@item Mathematical extensions: BigDecimal, BigFloat, operator overloading, bigint mode, math mode.
 
 @item Command line interpreter with contextual colorization and completion implemented in Javascript.
 
@@ -68,11 +62,6 @@ options then run @code{make}.
 
 You can type @code{make install} as root if you wish to install the binaries and support files to
 @code{/usr/local} (this is not necessary to use QuickJS).
-
-Note: On some OSes atomic operations are not available or need a
-specific library. If you get related errors, you should either add
-@code{-latomics} in the Makefile @code{LIBS} variable or disable
-@code{CONFIG_ATOMICS} in @file{quickjs.c}.
 
 @section Quick start
 
@@ -122,10 +111,6 @@ source is @code{import}.
 
 @item --script
 Load as ES6 script (default=autodetect).
-
-@item --bignum
-Enable the bignum extensions: BigDecimal object, BigFloat object and
-the @code{"use math"} directive.
 
 @item -I file
 @item --include file
@@ -182,9 +167,6 @@ find the name of the dynamically loaded modules.
 Add initialization code for an external C module. See the
 @code{c_module} example.
 
-@item -x
-Byte swapped output (only used for cross compilation).
-
 @item -flto
 Use link time optimization. The compilation is slower but the
 executable is smaller and faster. This option is automatically set
@@ -192,10 +174,6 @@ when the @code{-fno-x} options are used.
 
 @item -fno-[eval|string-normalize|regexp|json|proxy|map|typedarray|promise|bigint]
 Disable selected language features to produce a smaller executable file.
-
-@item -fbignum
-Enable the bignum extensions: BigDecimal object, BigFloat object and
-the @code{"use math"} directive.
 
 @end table
 
@@ -270,9 +248,9 @@ about 100 seconds).
 
 @section Language support
 
-@subsection ES2023 support
+@subsection ES2020 support
 
-The ES2023 specification is almost fully supported including the Annex
+The ES2020 specification is almost fully supported including the Annex
 B (legacy web compatibility) and the Unicode related features.
 
 The following features are not supported yet:
@@ -280,10 +258,6 @@ The following features are not supported yet:
 @itemize
 
 @item Tail calls@footnote{We believe the current specification of tails calls is too complicated and presents limited practical interests.}
-
-@item WeakRef and FinalizationRegistry objects
-
-@item Symbols as WeakMap keys
 
 @end itemize
 
@@ -295,28 +269,7 @@ ECMA402 (Internationalization API) is not supported.
 
 @itemize
 
-@item The directive @code{"use strip"} indicates that the debug information (including the source code of the functions) should not be retained to save memory. As @code{"use strict"}, the directive can be global to a script or local to a function.
-
 @item The first line of a script beginning with @code{#!} is ignored.
-
-@end itemize
-
-@subsection Mathematical extensions
-
-The mathematical extensions are fully backward compatible with
-standard Javascript. See @code{jsbignum.pdf} for more information.
-
-@itemize
-
-@item @code{BigDecimal} support: arbitrary large floating point numbers in base 10.
-
-@item @code{BigFloat} support: arbitrary large floating point numbers in base 2.
-
-@item Operator overloading.
-
-@item The directive @code{"use bigint"} enables the bigint mode where integers are @code{BigInt} by default.
-
-@item The directive @code{"use math"} enables the math mode where the division and power operators on integers produce fractions. Floating point literals are @code{BigFloat} by default and integers are @code{BigInt} by default.
 
 @end itemize
 
@@ -379,7 +332,9 @@ optional properties:
   stack frames below the evalScript.
   @item async
   Boolean (default = false). If true, @code{await} is accepted in the
-  script and a promise is returned.
+  script and a promise is returned. The promise is resolved with an
+  object whose @code{value} property holds the value returned by the
+  script.
   @end table
 
 @item loadScript(filename)
@@ -498,20 +453,6 @@ optional properties:
 
   @end table
 
-@item parseExtJSON(str)
-
-  Parse @code{str} using a superset of @code{JSON.parse}. The
-  following extensions are accepted:
-
-  @itemize
-  @item Single line and multiline comments
-  @item unquoted properties (ASCII-only Javascript identifiers)
-  @item trailing comma in array and object definitions
-  @item single quoted strings
-  @item @code{\f} and @code{\v} are accepted as space characters
-  @item leading plus in numbers
-  @item octal (@code{0o} prefix) and hexadecimal (@code{0x} prefix) numbers
-  @end itemize
 @end table
 
 FILE prototype:
@@ -761,9 +702,6 @@ object containing optional parameters:
 
   @end table
 
-@item getpid()
-Return the current process ID.
-
 @item waitpid(pid, options)
 @code{waitpid} Unix system call. Return the array @code{[ret,
 status]}. @code{ret} contains @code{-errno} in case of error.
@@ -789,11 +727,6 @@ Asynchronouse sleep during @code{delay_ms} milliseconds. Returns a promise. Exam
 @example
 await os.sleepAsync(500);
 @end example
-
-@item now()
-Return a timestamp in milliseconds with more precision than
-@code{Date.now()}. The time origin is unspecified and is normally not
-impacted by system clock adjustments.
 
 @item setTimeout(func, delay)
 Call the function @code{func} after @code{delay} ms. Return a handle
@@ -1079,13 +1012,16 @@ stack holds the Javascript parameters and local variables.
 @section RegExp
 
 A specific regular expression engine was developed. It is both small
-and efficient and supports all the ES2023 features including the
+and efficient and supports all the ES2020 features including the
 Unicode properties. As the Javascript compiler, it directly generates
 bytecode without a parse tree.
 
 Backtracking with an explicit stack is used so that there is no
 recursion on the system stack. Simple quantifiers are specifically
 optimized to avoid recursions.
+
+Infinite recursions coming from quantifiers with empty terms are
+avoided.
 
 The full regexp library weights about 15 KiB (x86 code), excluding the
 Unicode library.
@@ -1103,9 +1039,9 @@ binary properties.
 
 The full Unicode library weights about 45 KiB (x86 code).
 
-@section BigInt, BigFloat, BigDecimal
+@section BigInt
 
-BigInt, BigFloat and BigDecimal are implemented with the @code{libbf}
+BigInt is implemented with the @code{libbf}
 library@footnote{@url{https://bellard.org/libbf}}. It weights about 90
 KiB (x86 code) and provides arbitrary precision IEEE 754 floating
 point operations and transcendental functions with exact rounding.

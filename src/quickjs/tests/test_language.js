@@ -5,29 +5,41 @@ function assert(actual, expected, message) {
     if (actual === expected)
         return;
 
+    if (typeof actual == 'number' && isNaN(actual)
+    &&  typeof expected == 'number' && isNaN(expected))
+        return;
+
     if (actual !== null && expected !== null
     &&  typeof actual == 'object' && typeof expected == 'object'
     &&  actual.toString() === expected.toString())
         return;
 
+    var msg = message ? " (" + message + ")" : "";
     throw Error("assertion failed: got |" + actual + "|" +
-                ", expected |" + expected + "|" +
-                (message ? " (" + message + ")" : ""));
+                ", expected |" + expected + "|" + msg);
 }
 
-function assert_throws(expected_error, func)
+function assert_throws(expected_error, func, message)
 {
     var err = false;
+    var msg = message ? " (" + message + ")" : "";
     try {
-        func();
+        switch (typeof func) {
+        case 'string':
+            eval(func);
+            break;
+        case 'function':
+            func();
+            break;
+        }
     } catch(e) {
         err = true;
         if (!(e instanceof expected_error)) {
-            throw Error("unexpected exception type");
+            throw Error(`expected ${expected_error.name}, got ${e.name}${msg}`);
         }
     }
     if (!err) {
-        throw Error("expected exception");
+        throw Error(`expected ${expected_error.name}${msg}`);
     }
 }
 
@@ -68,10 +80,10 @@ function test_op1()
 
     r = 1 << 31;
     assert(r, -2147483648, "1 << 31 === -2147483648");
-    
+
     r = 1 << 32;
     assert(r, 1, "1 << 32 === 1");
-    
+
     r = (1 << 31) < 0;
     assert(r, true, "(1 << 31) < 0 === true");
 
@@ -113,7 +125,7 @@ function test_cvt()
     assert(("12345" | 0) === 12345);
     assert(("0x12345" | 0) === 0x12345);
     assert(((4294967296 * 3 - 4) | 0) === -4);
-    
+
     assert(("12345" >>> 0) === 12345);
     assert(("0x12345" >>> 0) === 0x12345);
     assert((NaN >>> 0) === 0);
@@ -141,7 +153,7 @@ function test_eq()
 function test_inc_dec()
 {
     var a, r;
-    
+
     a = 1;
     r = a++;
     assert(r === 1 && a === 2, true, "++");
@@ -169,19 +181,19 @@ function test_inc_dec()
     a = [true];
     a[0]++;
     assert(a[0], 2, "++");
-    
+
     a = {x:true};
     r = a.x++;
     assert(r === 1 && a.x === 2, true, "++");
-    
+
     a = {x:true};
     r = a.x--;
     assert(r === 1 && a.x === 0, true, "--");
-    
+
     a = [true];
     r = a[0]++;
     assert(r === 1 && a[0] === 2, true, "++");
-    
+
     a = [true];
     r = a[0]--;
     assert(r === 1 && a[0] === 0, true, "--");
@@ -213,7 +225,7 @@ function test_op2()
     assert((typeof Object), "function", "typeof");
     assert((typeof null), "object", "typeof");
     assert((typeof unknown_var), "undefined", "typeof");
-    
+
     a = {x: 1, if: 2, async: 3};
     assert(a.if === 2);
     assert(a.async === 3);
@@ -226,7 +238,7 @@ function test_delete()
     a = {x: 1, y: 1};
     assert((delete a.x), true, "delete");
     assert(("x" in a), false, "delete");
-    
+
     /* the following are not tested by test262 */
     assert(delete "abc"[100], true);
 
@@ -311,7 +323,7 @@ function test_class()
     o = new C();
     assert(o.f() === 1);
     assert(o.x === 10);
-    
+
     assert(D.F() === -1);
     assert(D.G() === -2);
     assert(D.H() === -1);
@@ -335,6 +347,13 @@ function test_class()
     assert(S.x === 42);
     assert(S.y === 42);
     assert(S.z === 42);
+    
+    class P {
+        get = () => "123";
+        static() { return 42; }
+    }
+    assert(new P().get() === "123");
+    assert(new P().static() === 42);
 };
 
 function test_template()
@@ -362,8 +381,9 @@ function test_template_skip()
 function test_object_literal()
 {
     var x = 0, get = 1, set = 2; async = 3;
-    a = { get: 2, set: 3, async: 4 };
-    assert(JSON.stringify(a), '{"get":2,"set":3,"async":4}');
+    a = { get: 2, set: 3, async: 4, get a(){ return this.get} };
+    assert(JSON.stringify(a), '{"get":2,"set":3,"async":4,"a":2}');
+    assert(a.a === 2);
 
     a = { x, get, set, async };
     assert(JSON.stringify(a), '{"x":0,"get":1,"set":2,"async":3}');
@@ -374,7 +394,7 @@ function test_regexp_skip()
     var a, b;
     [a, b = /abc\(/] = [1];
     assert(a === 1);
-    
+
     [a, b =/abc\(/] = [2];
     assert(a === 2);
 }
@@ -419,9 +439,11 @@ function test_argument_scope()
 {
     var f;
     var c = "global";
-    
+
     f = function(a = eval("var arguments")) {};
-    assert_throws(SyntaxError, f);
+    // for some reason v8 does not throw an exception here
+    if (typeof require === 'undefined')
+        assert_throws(SyntaxError, f);
 
     f = function(a = eval("1"), b = arguments[0]) { return b; };
     assert(f(12), 12);
@@ -490,7 +512,7 @@ function test_function_expr_name()
 
     /* non strict mode test : assignment to the function name silently
        fails */
-    
+
     f = function myfunc() {
         myfunc = 1;
         return myfunc;
@@ -511,7 +533,7 @@ function test_function_expr_name()
         return myfunc;
     };
     assert(f(), f);
-    
+
     /* strict mode test : assignment to the function name raises a
        TypeError exception */
 
@@ -536,51 +558,105 @@ function test_function_expr_name()
     assert_throws(TypeError, f);
 }
 
-function test_parse_semicolon()
-{
-    /* 'yield' or 'await' may not be considered as a token if the
-       previous ';' is missing */
-    function *f()
-    {
-        function func() {
-        }
-        yield 1;
-        var h = x => x + 1
-        yield 2;
-    }
-    async function g()
-    {
-        function func() {
-        }
-        await 1;
-        var h = x => x + 1
-        await 2;
-    }
+function test_expr(expr, err) {
+    if (err)
+        assert_throws(err, expr, `for ${expr}`);
+    else
+        assert(1, eval(expr), `for ${expr}`);
 }
 
-/* optional chaining tests not present in test262 */
-function test_optional_chaining()
+function test_name(name, err)
 {
-    var a, z;
-    z = null;
-    a = { b: { c: 2 } };
-    assert(delete z?.b.c, true);
-    assert(delete a?.b.c, true);
-    assert(JSON.stringify(a), '{"b":{}}', "optional chaining delete");
+    test_expr(`(function() { return typeof ${name} ? 1 : 1; })()`);
+    test_expr(`(function() { var ${name}; ${name} = 1; return ${name}; })()`);
+    test_expr(`(function() { let ${name}; ${name} = 1; return ${name}; })()`, name == 'let' ? SyntaxError : undefined);
+    test_expr(`(function() { const ${name} = 1; return ${name}; })()`, name == 'let' ? SyntaxError : undefined);
+    test_expr(`(function(${name}) { ${name} = 1; return ${name}; })()`);
+    test_expr(`(function({${name}}) { ${name} = 1; return ${name}; })({})`);
+    test_expr(`(function ${name}() { return ${name} ? 1 : 0; })()`);
+    test_expr(`"use strict"; (function() { return typeof ${name} ? 1 : 1; })()`, err);
+    test_expr(`"use strict"; (function() { if (0) ${name} = 1; return 1; })()`, err);
+    test_expr(`"use strict"; (function() { var x; if (0) x = ${name}; return 1; })()`, err);
+    test_expr(`"use strict"; (function() { var ${name}; return 1; })()`, err);
+    test_expr(`"use strict"; (function() { let ${name}; return 1; })()`, err);
+    test_expr(`"use strict"; (function() { const ${name} = 1; return 1; })()`, err);
+    test_expr(`"use strict"; (function() { var ${name}; ${name} = 1; return 1; })()`, err);
+    test_expr(`"use strict"; (function() { var ${name}; ${name} = 1; return ${name}; })()`, err);
+    test_expr(`"use strict"; (function(${name}) { return 1; })()`, err);
+    test_expr(`"use strict"; (function({${name}}) { return 1; })({})`, err);
+    test_expr(`"use strict"; (function ${name}() { return 1; })()`, err);
+    test_expr(`(function() { "use strict"; return typeof ${name} ? 1 : 1; })()`, err);
+    test_expr(`(function() { "use strict"; if (0) ${name} = 1; return 1; })()`, err);
+    test_expr(`(function() { "use strict"; var x; if (0) x = ${name}; return 1; })()`, err);
+    test_expr(`(function() { "use strict"; var ${name}; return 1; })()`, err);
+    test_expr(`(function() { "use strict"; let ${name}; return 1; })()`, err);
+    test_expr(`(function() { "use strict"; const ${name} = 1; return 1; })()`, err);
+    test_expr(`(function() { "use strict"; var ${name}; ${name} = 1; return 1; })()`, err);
+    test_expr(`(function() { "use strict"; var ${name}; ${name} = 1; return ${name}; })()`, err);
+    test_expr(`(function(${name}) { "use strict"; return 1; })()`, err);
+    test_expr(`(function({${name}}) { "use strict"; return 1; })({})`, SyntaxError);
+    test_expr(`(function ${name}() { "use strict"; return 1; })()`, err);
+}
 
-    a = { b: { c: 2 } };
-    assert(delete z?.b["c"], true);
-    assert(delete a?.b["c"], true);
-    assert(JSON.stringify(a), '{"b":{}}');
-    
-    a = {
-        b() { return this._b; },
-        _b: { c: 42 }
-    };
+function test_reserved_names()
+{
+    test_name('await');
+    test_name('yield', SyntaxError);
+    test_name('implements', SyntaxError);
+    test_name('interface', SyntaxError);
+    test_name('let', SyntaxError);
+    test_name('package', SyntaxError);
+    test_name('private', SyntaxError);
+    test_name('protected', SyntaxError);
+    test_name('public', SyntaxError);
+    test_name('static', SyntaxError);
+}
 
-    assert((a?.b)().c, 42);
+function test_number_literals()
+{
+    assert(0.1.a, undefined);
+    assert(0x1.a, undefined);
+    assert(0b1.a, undefined);
+    assert(01.a, undefined);
+    assert(0o1.a, undefined);
+    test_expr('0.a', SyntaxError);
+    assert(parseInt("0_1"), 0);
+    assert(parseInt("1_0"), 1);
+    assert(parseInt("0_1", 8), 0);
+    assert(parseInt("1_0", 8), 1);
+    assert(parseFloat("0_1"), 0);
+    assert(parseFloat("1_0"), 1);
+    assert(1_0, 10);
+    assert(parseInt("Infinity"), NaN);
+    assert(parseFloat("Infinity"), Infinity);
+    assert(parseFloat("Infinity1"), Infinity);
+    assert(parseFloat("Infinity_"), Infinity);
+    assert(parseFloat("Infinity."), Infinity);
+    test_expr('0_0', SyntaxError);
+    test_expr('00_0', SyntaxError);
+    test_expr('01_0', SyntaxError);
+    test_expr('08_0', SyntaxError);
+    test_expr('09_0', SyntaxError);
+}
 
-    assert((a?.["b"])().c, 42);
+function test_syntax()
+{
+    assert_throws(SyntaxError, "do");
+    assert_throws(SyntaxError, "do;");
+    assert_throws(SyntaxError, "do{}");
+    assert_throws(SyntaxError, "if");
+    assert_throws(SyntaxError, "if\n");
+    assert_throws(SyntaxError, "if 1");
+    assert_throws(SyntaxError, "if \0");
+    assert_throws(SyntaxError, "if ;");
+    assert_throws(SyntaxError, "if 'abc'");
+    assert_throws(SyntaxError, "if `abc`");
+    assert_throws(SyntaxError, "if /abc/");
+    assert_throws(SyntaxError, "if abc");
+    assert_throws(SyntaxError, "if abc\u0064");
+    assert_throws(SyntaxError, "if abc\\u0064");
+    assert_throws(SyntaxError, "if \u0123");
+    assert_throws(SyntaxError, "if \\u0123");
 }
 
 test_op1();
@@ -602,5 +678,6 @@ test_spread();
 test_function_length();
 test_argument_scope();
 test_function_expr_name();
-test_parse_semicolon();
-test_optional_chaining();
+test_reserved_names();
+test_number_literals();
+test_syntax();

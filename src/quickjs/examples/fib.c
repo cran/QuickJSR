@@ -1,6 +1,6 @@
 /*
  * QuickJS: Example of C module
- * 
+ *
  * Copyright (c) 2017-2018 Fabrice Bellard
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -35,8 +35,8 @@ static int fib(int n)
         return fib(n - 1) + fib(n - 2);
 }
 
-static JSValue js_fib(JSContext *ctx, JSValueConst this_val,
-                      int argc, JSValueConst *argv)
+static JSValue js_fib(JSContext *ctx, JSValue this_val,
+                      int argc, JSValue *argv)
 {
     int n, res;
     if (JS_ToInt32(ctx, &n, argv[0]))
