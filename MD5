@@ -1,7 +1,7 @@
-87b869f272b0b3422b5c03fe9e5af700 *DESCRIPTION
+e1d4bfc23ceba84b35322e913348c476 *DESCRIPTION
 f29ab4c037b9b5744c35044282f622ba *LICENSE
 142ada3b491231efdfab7ac14ef3eb28 *NAMESPACE
-a1dc0c44f60f8198b7e466ff2e8ea752 *NEWS.md
+d498c11ccb1ecce9d973273580ea06ca *NEWS.md
 0112a1bf8de48a1fe86df8406bf96c03 *R/JSContext.R
 2f8b1781894c3f9ecd8ef8f8e0e70f63 *R/flags.R
 f447f2e841bd83b4b432f7204f47cba1 *R/qjs.R
@@ -12,7 +12,7 @@ f10f1910f65938f9d24db769a9268f19 *R/quickjsr-package.R
 607ab09f6a78f18a63eeea2b0116330b *build/vignette.rds
 fb48a01a3bca2fea3bb8ea0ae6991a0f *inst/doc/working_with_js_types.R
 9a56f2155c98c72800c17a34512ef31e *inst/doc/working_with_js_types.Rmd
-c8e664ac9d5c8c750d81d7cdad919784 *inst/doc/working_with_js_types.html
+ba8aa2550c2a3fd82d7b7d574e691005 *inst/doc/working_with_js_types.html
 59c47d8ada29a19403957ae8787861e6 *inst/include/cpp11.hpp
 dfbe47bf0c66ff7233771acd08d82f27 *inst/include/cpp11/R.hpp
 cc6608a829ced0fdec641ed67ed09d5c *inst/include/cpp11/altrep.hpp
@@ -21,7 +21,7 @@ fcaeceb5570c753b09fe17fd52da38b5 *inst/include/cpp11/attribute_proxy.hpp
 e73dbc598579f360f52afae051ac852e *inst/include/cpp11/data_frame.hpp
 6b9b4837ba605ee15a2ea4348f461064 *inst/include/cpp11/declarations.hpp
 3126aaeabcf9ffc294d9313b524bb513 *inst/include/cpp11/doubles.hpp
-f3454bd83b8c0fb98df2fad85c126da8 *inst/include/cpp11/environment.hpp
+6f1aaa569fd7207a29cd6177c35ec143 *inst/include/cpp11/environment.hpp
 8fad7c935a79b690a06938aa33e0da04 *inst/include/cpp11/external_pointer.hpp
 ccdc414b60b8c6ec5c98ecb36793cb4e *inst/include/cpp11/function.hpp
 bda64804bdc81b9ed5c7245c222f52ff *inst/include/cpp11/integers.hpp
@@ -70,8 +70,8 @@ d4982ecbd86a1ce5939634cfc86e6a64 *man/JSContext-method-source.Rd
 6d4b8bfb872a8b860d8343ad332ee4f2 *man/qjs_eval.Rd
 0c49d2eedbb5424493c46f4b3b2bcfd0 *man/quickjs_version.Rd
 2b3a5adc32539392c22dafee20054401 *man/to_json.Rd
-9d2d6f3405d41dc6309753a8f03532e9 *src/Makevars
-129bc777b9492021c18ae24dccd9c639 *src/init.cpp
+748c941f5425d38f310dd182804fccdf *src/Makevars
+0ea4b6fe1a2b7b73a58b7e8d017d4896 *src/init.cpp
 d3be2769d2f5e99d3690c0092f1b045a *src/libquickjs.c
 1f3d354736f2fe4c447ae05166760e78 *src/quickjs/CMakeLists.txt
 5032b88872a641566afd9cea5387525d *src/quickjs/LICENSE
@@ -139,6 +139,6 @@ aac342164e38c00ec23aa490328beeae *src/quickjs/tests/test_worker_module.js
 5e0944b67e894988e79a8a54a9e9e0b9 *src/quickjs/v8.js
 2dcbebf1ffd7722ab9527e2d3c72882d *src/quickjs/v8.sh
 64904d3c87fd5e1cb4478a552540dc77 *src/quickjs/v8.txt
-63584d20fc71c6927919bc3552df2a76 *src/quickjsr.cpp
+71684318c1f8fadfa4f5911110395eec *src/quickjsr.cpp
 ac8612347958caa9b35bc4dbfe52e670 *tests/tinytest.R
 9a56f2155c98c72800c17a34512ef31e *vignettes/working_with_js_types.Rmd
