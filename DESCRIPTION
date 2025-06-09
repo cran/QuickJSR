@@ -1,6 +1,6 @@
 Package: QuickJSR
-Title: Interface for the 'QuickJS' Lightweight 'JavaScript' Engine
-Version: 1.7.0
+Title: Interface for the 'QuickJS-NG' Lightweight 'JavaScript' Engine
+Version: 1.8.0
 Authors@R: c(
     person(c("Andrew", "R."), "Johnson", , "andrew.johnson@arjohnsonau.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-7000-8065")),
@@ -14,7 +14,7 @@ Description: An 'R' interface to the 'QuickJS' portable 'JavaScript'
     within the package, requiring no dependencies beyond a 'C' compiler.
 License: MIT + file LICENSE
 URL: https://github.com/andrjohns/QuickJSR,
-        https://bellard.org/quickjs/
+        https://github.com/quickjs-ng/quickjs
 BugReports: https://github.com/andrjohns/QuickJSR/issues
 Suggests: knitr, rmarkdown, tinytest
 Encoding: UTF-8
@@ -23,10 +23,11 @@ NeedsCompilation: yes
 RoxygenNote: 7.3.2
 SystemRequirements: GNU make
 VignetteBuilder: knitr
-Packaged: 2025-03-31 13:16:41 UTC; andrew
-Author: Andrew R. Johnson [aut, cre] (<https://orcid.org/0000-0001-7000-8065>),
+Packaged: 2025-06-09 14:59:37 UTC; andrew
+Author: Andrew R. Johnson [aut, cre] (ORCID:
+    <https://orcid.org/0000-0001-7000-8065>),
   QuickJS Authors [cph] (QuickJS sources and headers),
   QuickJS-NG Authors [cph] (QuickJS-NG sources and headers)
 Maintainer: Andrew R. Johnson <andrew.johnson@arjohnsonau.com>
 Repository: CRAN
-Date/Publication: 2025-03-31 13:50:02 UTC
+Date/Publication: 2025-06-09 15:30:02 UTC
