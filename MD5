@@ -1,4 +1,4 @@
-262ffca64726751c573b70234fa2ef89 *DESCRIPTION
+692f8cc79be49cef85fe739b268c0f69 *DESCRIPTION
 f29ab4c037b9b5744c35044282f622ba *LICENSE
 a3cc65aaaf4273be05b237616f458ee0 *NAMESPACE
 4ebb576d5743e61f3ddc74c43e9ea19c *NEWS.md
@@ -7,16 +7,16 @@ f447f2e841bd83b4b432f7204f47cba1 *R/qjs.R
 f10f1910f65938f9d24db769a9268f19 *R/quickjsr-package.R
 45d369987be0f222d8e6bb77d55e2dae *R/zzz.R
 5c90eea19f8048d73491b8a2cd793a6b *README.md
-ce66024b1eccd2b5da306c2b065e6484 *build/vignette.rds
+69d274d09756854a68c86c7358cb94ae *build/vignette.rds
 fb48a01a3bca2fea3bb8ea0ae6991a0f *inst/doc/working_with_js_types.R
 9a56f2155c98c72800c17a34512ef31e *inst/doc/working_with_js_types.Rmd
-a607709023d871a66638699ec92b22ce *inst/doc/working_with_js_types.html
+f05311669be67f6dda0da0fdb4c5f79d *inst/doc/working_with_js_types.html
 5f5e8bda75bbc24d0bb41aa85c91337d *inst/tinytest/test_JSContext.R
 7ab298428bfbe98ac7a7ff285841e7f5 *inst/tinytest/test_data_conversion.R
 11c942e40a7f1c632194ebb7dd41c422 *inst/tinytest/test_qjs_eval.R
 4b816d167b6bc876fe321613f8a5a442 *inst/tinytest/test_to_json_asis.R
 8aa94f260b4114a192b388e2f4d3b7b0 *inst/tinytest/test_to_json_dataframe.R
-0ba9d2d0ae011de367835975ed0d80f9 *inst/tinytest/test_to_json_date.R
+f8706132099b48854b57b25ac6a85361 *inst/tinytest/test_to_json_date.R
 43a407fa35b86461ef406f8c649be36c *inst/tinytest/test_to_json_factor.R
 327184a78119fd54b079b7154cc4dc6f *inst/tinytest/test_to_json_matrix.R
 ea6de7a5870eaf7fe6bfca93e92ac049 *man/JSContext-method-assign.Rd
@@ -32,7 +32,7 @@ a753931e4fa9c1be839b6c122cfe064e *man/quickjs_version.Rd
 2b3a5adc32539392c22dafee20054401 *man/to_json.Rd
 cfa7e60f3c935be3c8bd7f2c2f9aade4 *src/Makevars
 b56de332e35095618753f222d83b2a1b *src/include/cpp11.hpp
-734e3820b036557fb463941bb8181ff0 *src/include/cpp11/R.hpp
+837e045c7e28b1886ccba3aae00ac8d9 *src/include/cpp11/R.hpp
 9a79c29ef17b31f942e4524daa3c567a *src/include/cpp11/altrep.hpp
 582a3ef513152a0d9b2d7fd645ab9946 *src/include/cpp11/as.hpp
 33fea6ce3d8e419e3b39edbad929debd *src/include/cpp11/attribute_proxy.hpp
@@ -41,7 +41,7 @@ e269e0ae86768bf648df277c0df27cda *src/include/cpp11/declarations.hpp
 eb92c84370b25e2c7d97afae9544dd68 *src/include/cpp11/doubles.hpp
 ddcd2f3fff750cbe90d0627e702b7b3f *src/include/cpp11/environment.hpp
 331f8c0efca0806f14b3a0bbb1092488 *src/include/cpp11/external_pointer.hpp
-095e53bfef9ee433616ebb5ce535ee47 *src/include/cpp11/function.hpp
+86e6104ed9045eeab150ea82c9dabcf4 *src/include/cpp11/function.hpp
 92a920417bb7f8c1bbd8847a3fc59ee9 *src/include/cpp11/integers.hpp
 d21de309e70aae249aea0bee2e2fe474 *src/include/cpp11/list.hpp
 26585fec819060d3fccf1c02ee7fc4a8 *src/include/cpp11/list_of.hpp
