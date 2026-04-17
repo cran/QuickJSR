@@ -1,3 +1,9 @@
+# QuickJSR 1.9.2
+  * Updated use of non-API C functions
+
+# QuickJSR 1.9.1
+  * Updated use of non-API C functions
+  
 # QuickJSR 1.9.0
   * Update bundled QuickJS-NG engine to v0.11.0 (see https://github.com/quickjs-ng/quickjs/releases for release notes)
   * Move build headers to reduce installed package size
