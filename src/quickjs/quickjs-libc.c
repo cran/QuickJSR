@@ -229,10 +229,9 @@ static void js_set_thread_state(JSRuntime *rt, JSThreadState *ts)
 
 // Non-CL Clang on Windows does not define __GNUC__
 #if defined(__GNUC__) || defined(__clang__)
-//#pragmaGCC diagnostic push
-//#pragmaGCC diagnostic ignored "-Wformat-nonliteral"
-#endif // __GNUC__ || __clang__
 
+
+#endif // __GNUC__ || __clang__
 static JSValue js_printf_internal(JSContext *ctx,
                                   int argc, JSValueConst *argv, FILE *fp)
 {
@@ -448,9 +447,8 @@ fail:
     dbuf_free(&dbuf);
     return JS_EXCEPTION;
 }
-
 #if defined(__GNUC__) || defined(__clang__)
-//#pragmaGCC diagnostic pop // ignored "-Wformat-nonliteral"
+
 #endif // __GNUC__ || __clang__
 
 uint8_t *js_load_file(JSContext *ctx, size_t *pbuf_len, const char *filename)
@@ -530,8 +528,12 @@ static int get_bool_option(JSContext *ctx, bool *pbool,
     return 0;
 }
 
-static void free_buf(JSRuntime *rt, void *opaque, void *ptr) {
-    js_free_rt(rt, ptr);
+// js_realloc_array_buffer to avoid a name conflict with
+// js_array_buffer_realloc from quickjs.c in the amalgamation build
+static void *js_realloc_array_buffer(JSRuntime *rt, void *opaque, void *ptr,
+                                     size_t size)
+{
+    return js_realloc_rt(rt, ptr, size);
 }
 
 /* load a file as a UTF-8 encoded string or Uint8Array */
@@ -560,7 +562,8 @@ static JSValue js_std_loadFile(JSContext *ctx, JSValueConst this_val,
     if (!buf)
         return JS_NULL;
     if (binary) {
-        ret = JS_NewUint8Array(ctx, buf, buf_len, free_buf, NULL, false);
+        ret = JS_NewUint8Array(ctx, buf, buf_len, js_realloc_array_buffer,
+                               NULL, false);
     } else {
         ret = JS_NewStringLen(ctx, (char *)buf, buf_len);
         js_free(ctx, buf);
@@ -831,13 +834,6 @@ int js_module_check_attributes(JSContext *ctx, void *opaque,
     return ret;
 }
 
-// js_free_array_buffer to avoid a name conflict with js_array_buffer_free
-// from quickjs.c in the amalgamation build
-static void js_free_array_buffer(JSRuntime *rt, void *opaque, void *ptr)
-{
-    js_free_rt(rt, ptr);
-}
-
 enum {
     JS_IMPORT_TYPE_JS,
     JS_IMPORT_TYPE_JSON,
@@ -894,7 +890,9 @@ JSModuleDef *js_module_load(JSContext *ctx, const char *module_name,
     type = js_module_import_type(ctx, attributes);
     if (type < 0)
         return NULL;
-    if (type != JS_IMPORT_TYPE_BYTES)
+    /* the .json suffix only selects the JSON type when no type attribute
+       was given, so that e.g. 'with { type: "text" }' is honored */
+    if (type == JS_IMPORT_TYPE_JS)
         if (js__has_suffix(module_name, ".json"))
             type = JS_IMPORT_TYPE_JSON;
     buf = (char *)load_file(ctx, &buf_len, module_name);
@@ -916,7 +914,8 @@ JSModuleDef *js_module_load(JSContext *ctx, const char *module_name,
         break;
     case JS_IMPORT_TYPE_BYTES:
         val = JS_NewUint8Array(ctx, (uint8_t *)buf, buf_len,
-                               js_free_array_buffer, NULL, /*is_shared*/false);
+                               js_realloc_array_buffer, NULL,
+                               /*is_shared*/false);
         if (!JS_IsException(val)) {
             JSValue abuf = JS_GetTypedArrayBuffer(ctx, val, NULL, NULL, NULL);
             JS_SetImmutableArrayBuffer(abuf, /*immutable*/true);
@@ -967,8 +966,7 @@ static JSValue js_std_exit(JSContext *ctx, JSValueConst this_val,
     int status;
     if (JS_ToInt32(ctx, &status, argv[0]))
         status = -1;
-    exit(status);
-    return JS_UNDEFINED;
+    return exit_wrapper_js(ctx, status);
 }
 
 static JSValue js_std_getenv(JSContext *ctx, JSValueConst this_val,
@@ -1921,7 +1919,7 @@ static const JSCFunctionListEntry js_std_funcs[] = {
     JS_CFUNC_DEF("evalScript", 1, js_evalScript ),
     JS_CFUNC_DEF("loadScript", 1, js_loadScript ),
     JS_CFUNC_DEF("getenv", 1, js_std_getenv ),
-    JS_CFUNC_DEF("setenv", 1, js_std_setenv ),
+    JS_CFUNC_DEF("setenv", 2, js_std_setenv ),
     JS_CFUNC_DEF("unsetenv", 1, js_std_unsetenv ),
     JS_CFUNC_DEF("getenviron", 1, js_std_getenviron ),
 #if !defined(__wasi__)
@@ -2642,7 +2640,7 @@ static void js_waker_signal(JSWaker *w)
         ret = write(w->write_fd, "", 1);
         if (ret == 1)
             break;
-        if (ret < 0 && (errno != EAGAIN || errno != EINTR))
+        if (ret < 0 && errno != EAGAIN && errno != EINTR)
             break;
     }
 }
@@ -4450,7 +4448,7 @@ static const JSCFunctionListEntry js_os_funcs[] = {
     JS_CFUNC_DEF("sleepAsync", 1, js_os_sleepAsync ),
     JS_PROP_STRING_DEF("platform", OS_PLATFORM, 0 ),
     JS_CFUNC_DEF("getcwd", 0, js_os_getcwd ),
-    JS_CFUNC_DEF("chdir", 0, js_os_chdir ),
+    JS_CFUNC_DEF("chdir", 1, js_os_chdir ),
     JS_CFUNC_DEF("mkdir", 1, js_os_mkdir ),
     JS_CFUNC_DEF("readdir", 1, js_os_readdir ),
 #if !defined(_WIN32) && !defined(__wasi__)
@@ -4722,22 +4720,41 @@ static void js_dump_obj(JSContext *ctx, FILE *f, JSValueConst val)
     }
 }
 
+#define JS_DUMP_ERROR_MAX_CAUSE_DEPTH 10
+
 static void js_std_dump_error1(JSContext *ctx, JSValueConst exception_val)
 {
-    JSValue val;
+    JSValue val, current;
     bool is_error;
+    int depth;
 
-    is_error = JS_IsError(exception_val);
-    js_dump_obj(ctx, stderr, exception_val);
-    if (is_error) {
-        val = JS_GetPropertyStr(ctx, exception_val, "stack");
-    } else {
-        js_std_cmd(/*ErrorBackTrace*/2, ctx, &val);
+    current = JS_DupValue(ctx, exception_val);
+    for (depth = 0; ; depth++) {
+        is_error = JS_IsError(current);
+        js_dump_obj(ctx, stderr, current);
+        if (is_error) {
+            val = JS_GetPropertyStr(ctx, current, "stack");
+        } else if (depth == 0) {
+            js_std_cmd(/*ErrorBackTrace*/2, ctx, &val);
+        } else {
+            val = JS_UNDEFINED;
+        }
+        if (!JS_IsUndefined(val)) {
+            js_dump_obj(ctx, stderr, val);
+            JS_FreeValue(ctx, val);
+        }
+        if (!is_error || depth >= JS_DUMP_ERROR_MAX_CAUSE_DEPTH)
+            break;
+        val = JS_GetPropertyStr(ctx, current, "cause");
+        if (JS_IsUndefined(val)) {
+            JS_FreeValue(ctx, val);
+            break;
+        }
+        fputs("Caused by: ", stderr);
+        JS_FreeValue(ctx, current);
+        current = val;
     }
-    if (!JS_IsUndefined(val)) {
-        js_dump_obj(ctx, stderr, val);
-        JS_FreeValue(ctx, val);
-    }
+    JS_FreeValue(ctx, current);
 }
 
 void js_std_dump_error(JSContext *ctx)

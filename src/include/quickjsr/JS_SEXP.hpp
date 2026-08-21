@@ -20,19 +20,35 @@ namespace quickjsr {
   inline JSValue SEXP_to_JSValue(JSContext* ctx, const SEXP& x, bool auto_unbox,
                                   bool auto_unbox_curr);
 
-  JSClassID js_sexp_class_id = 100;
-  JSClassID js_renv_class_id = 101;
-  JSClassDef js_sexp_class_def = {
+  static JSClassID js_sexp_class_id;
+  static JSClassID js_renv_class_id;
+
+  // The wrapped SEXP (an R closure, see SEXP_to_JSValue_function) is kept
+  // alive with R_PreserveObject() for as long as this JS object holds a raw
+  // pointer to it, since nothing else protects it from R's GC once the
+  // .Call() that produced it returns.
+  static void js_sexp_finalizer(JSRuntime *rt, JSValueConst val) {
+    SEXP x = reinterpret_cast<SEXP>(JS_GetOpaque(val, js_sexp_class_id));
+    if (x) {
+      R_ReleaseObject(x);
+    }
+  }
+
+  static JSClassDef js_sexp_class_def = {
     "SEXP",
-    nullptr // finalized
+    js_sexp_finalizer
   };
 
   static JSValue js_renv_get_property(JSContext *ctx, JSValueConst this_val, JSAtom atom, JSValueConst receiver) {
     const char *property_name = JS_AtomToCString(ctx, atom);
-    JS_FreeCString(ctx, property_name);
     SEXP x = reinterpret_cast<SEXP>(JS_GetOpaque(this_val, js_renv_class_id));
     cpp11::environment env(x);
+    if (!property_name || !env.exists(property_name)) {
+      JS_FreeCString(ctx, property_name);
+      return JS_UNDEFINED;
+    }
     SEXP fun = env[property_name];
+    JS_FreeCString(ctx, property_name);
     if (TYPEOF(fun) == PROMSXP) {
       fun = Rf_eval(fun, env);
     }
@@ -41,14 +57,16 @@ namespace quickjsr {
 
   static int js_renv_set_property(JSContext *ctx, JSValueConst this_val, JSAtom atom, JSValueConst value, JSValueConst receiver, int flags) {
     const char *property_name = JS_AtomToCString(ctx, atom);
-    JS_FreeCString(ctx, property_name);
     SEXP x = reinterpret_cast<SEXP>(JS_GetOpaque(this_val, js_renv_class_id));
     cpp11::environment env(x);
-    env[property_name] = JSValue_to_SEXP(ctx, value);
+    if (property_name) {
+      env[property_name] = JSValue_to_SEXP(ctx, value);
+    }
+    JS_FreeCString(ctx, property_name);
     return 0;
   }
 
-  JSClassExoticMethods js_renv_exotic_methods = {
+  static JSClassExoticMethods js_renv_exotic_methods = {
     nullptr,
     nullptr,
     nullptr,
@@ -58,9 +76,16 @@ namespace quickjsr {
     js_renv_set_property
   };
 
-  JSClassDef js_renv_class_def = {
+  static void js_renv_finalizer(JSRuntime *rt, JSValueConst val) {
+    SEXP x = reinterpret_cast<SEXP>(JS_GetOpaque(val, js_renv_class_id));
+    if (x) {
+      R_ReleaseObject(x);
+    }
+  }
+
+  static JSClassDef js_renv_class_def = {
     "REnv",
-    nullptr,
+    js_renv_finalizer,
     nullptr,
     nullptr,
     &js_renv_exotic_methods
@@ -72,7 +97,6 @@ namespace quickjsr {
     }
 
     const char *package_name = JS_ToCString(ctx, argv[0]);
-    JS_FreeCString(ctx, package_name);
     if (!package_name) {
         return JS_EXCEPTION;
     }
@@ -80,9 +104,14 @@ namespace quickjsr {
     if (strcmp(package_name, "base") == 0) {
       pkg_ns = R_BaseEnv;
     } else {
-      SEXP pkg_name_sexp = Rf_mkString(package_name);
-      pkg_ns = R_FindNamespace(pkg_name_sexp);
+      pkg_ns = cpp11::detail::r_ns_env(package_name);
+      if (pkg_ns == R_NilValue) {
+        JSValue exc = JS_ThrowTypeError(ctx, "Can't find namespace '%s' - the package must already be loaded", package_name);
+        JS_FreeCString(ctx, package_name);
+        return exc;
+      }
     }
+    JS_FreeCString(ctx, package_name);
     return SEXP_to_JSValue(ctx, pkg_ns, true, true);
   }
 

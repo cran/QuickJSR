@@ -1,6 +1,7 @@
 #ifndef QUICKJS_HELPERS_HPP
 #define QUICKJS_HELPERS_HPP
 
+#include "quickjs.h"
 #include <cpp11.hpp>
 #include <quickjs-libc.h>
 #include <quickjsr/JS_SEXP.hpp>
@@ -37,12 +38,27 @@ namespace quickjsr {
       val = JS_Eval(ctx, buf, buf_len, filename, eval_flags);
     }
     if (JS_IsException(val)) {
-      js_std_dump_error(ctx);
+      JSValue exc = JS_GetException(ctx);
+      const char* res_str = JS_ToCString(ctx, exc);
+      std::string msg = res_str;
+      JS_FreeCString(ctx, res_str);
+      std::string stack = "";
+      if (JS_IsError(exc)) {
+        JSValue stack_val = JS_GetPropertyStr(ctx, exc, "stack");
+        const char* stack_str = JS_ToCString(ctx, stack_val);
+        stack = stack_str;
+        stack = "\n" + stack;
+        JS_FreeCString(ctx, stack_str);
+        JS_FreeValue(ctx, stack_val);
+      }
+      JS_FreeValue(ctx, exc);
+      JS_FreeValue(ctx, val);
+      cpp11::stop("JavaScript Exception: \n" + msg + stack);
       ret = -1;
     } else {
+      JS_FreeValue(ctx, val);
       ret = 0;
     }
-    JS_FreeValue(ctx, val);
     return ret;
   }
 
@@ -86,15 +102,17 @@ namespace quickjsr {
 
     JS_SetModuleLoaderFunc2(rt, NULL, js_module_loader, js_module_check_attributes, NULL);
 
-    js_init_module_os(ctx, "os");
-    js_init_module_std(ctx, "std");
-
     js_std_add_helpers(ctx, 0, (char**)"");
 
     const char *str = "import * as std from 'std';\n"
         "import * as os from 'os';\n"
         "globalThis.std = std;\n"
-        "globalThis.os = os;\n";
+        "globalThis.os = os;\n"
+        // console.log is defined by js_std_add_helpers(); console.error is
+        // not, so add it here, writing to stderr instead of stdout.
+        "globalThis.console.error = function(...args) {\n"
+        "  std.err.puts(args.join(' ') + '\\n');\n"
+        "};\n";
     eval_buf(ctx, str, strlen(str), "<input>", JS_EVAL_TYPE_MODULE);
 
     JSValue global_obj = JS_GetGlobalObject(ctx);
@@ -105,7 +123,7 @@ namespace quickjsr {
     return ctx;
   }
 
-  JSRuntime* JS_NewCustomRuntime(int stack_size) {
+  inline JSRuntime* JS_NewCustomRuntime(int stack_size) {
     JSRuntime *rt;
     rt = JS_NewRuntime();
     if (!rt){
@@ -117,6 +135,9 @@ namespace quickjsr {
     }
     js_std_set_worker_new_context_func(JS_NewCustomContext);
     js_std_init_handlers(rt);
+
+    JS_NewClassID(rt, &quickjsr::js_sexp_class_id);
+    JS_NewClassID(rt, &quickjsr::js_renv_class_id);
     // Initialise a class which can be used for passing SEXP objects to JS
     // without needing conversion
     JS_NewClass(rt, quickjsr::js_sexp_class_id, &quickjsr::js_sexp_class_def);

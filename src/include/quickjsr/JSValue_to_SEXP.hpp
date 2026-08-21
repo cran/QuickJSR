@@ -2,8 +2,10 @@
 #define QUICKJSR_JSVALUE_TO_SEXP_HPP
 
 #include "cpp11/protect.hpp"
+#include "quickjs.h"
 #include <cpp11.hpp>
 #include <quickjs-libc.h>
+#include <ctime>
 
 namespace quickjsr {
   enum BaseType {
@@ -18,7 +20,7 @@ namespace quickjsr {
     Error
   };
 
-  BaseType value_to_base_type(const JSValue& value) {
+  inline BaseType value_to_base_type(const JSValue& value) {
     if (JS_IsException(value)) {
       return Error;
     }
@@ -46,7 +48,7 @@ namespace quickjsr {
     return Mixed;
   }
 
-  BaseType combine_array_types(BaseType a, BaseType b) {
+  inline BaseType combine_array_types(BaseType a, BaseType b) {
     if (a == Mixed || b == Mixed) {
       return Mixed;
     }
@@ -78,7 +80,7 @@ namespace quickjsr {
   }
   SEXP JSValue_to_SEXP(JSContext* ctx, const JSValue& val);
 
-  SEXP date_sexp(JSContext* ctx, const JSValue& val) {
+  inline SEXP date_sexp(JSContext* ctx, const JSValue& val) {
     // Extract getIsoString from the Date object
     JSValue iso_str_func = JS_GetPropertyStr(ctx, val, "toISOString");
     if (JS_IsException(iso_str_func) || !JS_IsFunction(ctx, iso_str_func)) {
@@ -92,14 +94,39 @@ namespace quickjsr {
       return R_NilValue;
     }
     const char* res = JS_ToCString(ctx, iso_str_val);
-    cpp11::function as_posix = cpp11::package("base")["as.POSIXct"];
-    SEXP out = as_posix(res, "tz"_nm = "UTC", "format"_nm = "%Y-%m-%dT%H:%M:%OSZ");
-    JS_FreeValue(ctx, iso_str_val);
+
+    // Parse ISO 8601: "2024-01-15T12:30:45.123Z"
+    double secs = 0.0;
+    if (res) {
+      struct tm utc_tm = {};
+      int ms = 0;
+      int n = sscanf(res, "%d-%d-%dT%d:%d:%d.%dZ",
+                     &utc_tm.tm_year, &utc_tm.tm_mon, &utc_tm.tm_mday,
+                     &utc_tm.tm_hour, &utc_tm.tm_min, &utc_tm.tm_sec, &ms);
+      if (n >= 6) {
+        utc_tm.tm_year -= 1900;
+        utc_tm.tm_mon -= 1;
+        utc_tm.tm_isdst = 0;
+#ifdef _WIN32
+        time_t t = _mkgmtime(&utc_tm);
+#else
+        time_t t = timegm(&utc_tm);
+#endif
+        secs = static_cast<double>(t) + ms / 1000.0;
+      }
+    }
+
     JS_FreeCString(ctx, res);
+    JS_FreeValue(ctx, iso_str_val);
+
+    SEXP out = PROTECT(Rf_allocVector(REALSXP, 1));
+    REAL(out)[0] = secs;
+    Rf_setAttrib(out, R_ClassSymbol, Rf_mkString("POSIXct"));
+    UNPROTECT(1);
     return out;
   }
 
-  SEXP array_sexp(JSContext* ctx, const JSValue& val) {
+  inline SEXP array_sexp(JSContext* ctx, const JSValue& val) {
     // Handle as array
     int64_t len;
     JS_GetLength(ctx, val, &len);
@@ -224,7 +251,7 @@ namespace quickjsr {
     }
   }
 
-  SEXP object_sexp(JSContext* ctx, const JSValue& val) {
+  inline SEXP object_sexp(JSContext* ctx, const JSValue& val) {
     // Handle as object
     // Get the keys of the object
     JSPropertyEnum* tab = NULL;
@@ -247,15 +274,24 @@ namespace quickjsr {
     return out;
   }
 
-SEXP JSValue_to_SEXP(JSContext* ctx, const JSValue& val) {
+inline SEXP JSValue_to_SEXP(JSContext* ctx, const JSValue& val) {
   switch (JS_VALUE_GET_NORM_TAG(val)) {
     case JS_TAG_EXCEPTION: {
       JSValue exc = JS_GetException(ctx);
-      const char* res_str = JS_ToCString(ctx, val);
+      const char* res_str = JS_ToCString(ctx, exc);
       std::string msg = res_str;
       JS_FreeCString(ctx, res_str);
+      std::string stack = "";
+      if (JS_IsError(exc)) {
+        JSValue stack_val = JS_GetPropertyStr(ctx, exc, "stack");
+        const char* stack_str = JS_ToCString(ctx, stack_val);
+        stack = stack_str;
+        stack = "\n" + stack;
+        JS_FreeCString(ctx, stack_str);
+        JS_FreeValue(ctx, stack_val);
+      }
       JS_FreeValue(ctx, exc);
-      cpp11::stop("JavaScript Exception: " + msg);
+      cpp11::stop("JavaScript Exception: \n" + msg + stack);
     }
     case JS_TAG_NULL: {
       return R_NilValue;
@@ -288,15 +324,19 @@ SEXP JSValue_to_SEXP(JSContext* ctx, const JSValue& val) {
     }
     case JS_TAG_STRING: {
       const char* res = JS_ToCString(ctx, val);
-      std::string res_str = res ? res : "";
+      SEXP out = PROTECT(Rf_allocVector(STRSXP, 1));
+      SET_STRING_ELT(out, 0, res ? Rf_mkCharLenCE(res, static_cast<int>(strlen(res)), CE_UTF8) : Rf_mkChar(""));
       JS_FreeCString(ctx, res);
-      return cpp11::as_sexp(res_str);
+      UNPROTECT(1);
+      return out;
     }
     case JS_TAG_STRING_ROPE: {
       const char* res = JS_ToCString(ctx, val);
-      std::string res_str = res ? res : "";
+      SEXP out = PROTECT(Rf_allocVector(STRSXP, 1));
+      SET_STRING_ELT(out, 0, res ? Rf_mkCharLenCE(res, static_cast<int>(strlen(res)), CE_UTF8) : Rf_mkChar(""));
       JS_FreeCString(ctx, res);
-      return cpp11::as_sexp(res_str);
+      UNPROTECT(1);
+      return out;
     }
     case JS_TAG_OBJECT: {
       if (JS_IsDate(val)) {

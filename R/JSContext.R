@@ -110,10 +110,11 @@ assign <- NULL
 
 new_JSContext <- function(stack_size = NULL) {
   stack_size_int <- ifelse(is.null(stack_size), -1, stack_size)
-  rt_and_ctx <- qjs_context(stack_size_int)
+  # A single pointer owning both the runtime and its context, so that
+  # freeing always happens in the correct order (context before runtime)
+  # regardless of R's garbage collection order.
   ContextList <- list(
-    runtime = rt_and_ctx$runtime_ptr,
-    context = rt_and_ctx$context_ptr
+    context = qjs_context(stack_size_int)
   )
 
   ContextList$validate <- function(code_string) {
@@ -124,13 +125,23 @@ new_JSContext <- function(stack_size = NULL) {
     eval_success <- TRUE
     if (!is.null(file)) {
       if (!is.null(code)) {
-        warning("Both a filepath and code string cannot be provided,",
-                " code will be ignored!", call. = FALSE)
+        warning(
+          "Both a filepath and code string cannot be provided,",
+          " code will be ignored!",
+          call. = FALSE
+        )
       }
-      eval_success <- qjs_source(ContextList$context,
-                                  input = normalizePath(file), is_file = TRUE)
+      eval_success <- qjs_source(
+        ContextList$context,
+        input = normalizePath(file),
+        is_file = TRUE
+      )
     } else if (!is.null(code)) {
-      eval_success <- qjs_source(ContextList$context, input = code, is_file = FALSE)
+      eval_success <- qjs_source(
+        ContextList$context,
+        input = code,
+        is_file = FALSE
+      )
     } else {
       stop("No JS code provided!", call. = FALSE)
     }
